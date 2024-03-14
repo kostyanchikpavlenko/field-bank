@@ -1,0 +1,8 @@
+﻿CREATE TABLE [dbo].[DataTypes] (
+    [DataTypeId] UNIQUEIDENTIFIER NOT NULL,
+    [Type]       NVARCHAR (255)   NOT NULL,
+    [ProjectId]  UNIQUEIDENTIFIER NOT NULL,
+    CONSTRAINT [PK_DataTypeId] PRIMARY KEY CLUSTERED ([DataTypeId] ASC),
+    CONSTRAINT [UC_DataTypes_Name] UNIQUE NONCLUSTERED ([Type] ASC)
+);
+
