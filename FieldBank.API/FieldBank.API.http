@@ -1,6 +1,0 @@
-@FieldBank.API_HostAddress = http://localhost:5269
-
-GET {{FieldBank.API_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
