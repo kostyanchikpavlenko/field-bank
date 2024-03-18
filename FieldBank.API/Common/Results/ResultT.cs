@@ -18,6 +18,8 @@
 
         public static Result<T> NotFound(Error error) => new(default, false, error, ResultState.NotFound);
 
+        public static new Result<T> UnprocessableEntity(Error error) => new(default, false, error, ResultState.UnprocessableEntity);
+
         public static Result<T> Unauthorized(Error error) => new(default, false, error, ResultState.Unauthorized);
 
         public new static Result<T> Failure(Error error) => new(default, false, error, ResultState.BadRequest);

@@ -4,6 +4,7 @@ using FieldBank.API.Contracts;
 using FieldBank.API.Database.Interfaces;
 using FieldBank.API.Features.ProjectTypes;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using SqlKata.Execution;
 
 namespace FieldBank.API.Features.ProjectTypes
@@ -43,17 +44,17 @@ namespace FieldBank.API.Features.ProjectTypes
     {
         public void MapEndpoint(IEndpointRouteBuilder app)
         {
-            app.MapGet("api/project-type/{id}", async (Guid projectTypeId, ISender sender) =>
+            app.MapGet("api/project-types/{id}", async (Guid projectTypeId, ISender sender) =>
             {
                 var query = new GetProjectType.Query {ProjectTypeId = projectTypeId};
                 var result = await sender.Send(query);
 
-                if (result?.IsFailure == true)
+                if (result.IsFailure)
                 {
-                    return Result<GetProjectTypeResponse>.NotFound(result.Error);
+                    return Results.NotFound(result.Error);
                 }
 
-                return Result<GetProjectTypeResponse>.Success(result?.Value);
+                return Results.Ok(result?.Value);
             }).WithOpenApi();
         }
     }
