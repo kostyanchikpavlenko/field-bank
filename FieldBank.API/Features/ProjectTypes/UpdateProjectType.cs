@@ -62,7 +62,7 @@ namespace FieldBank.API.Features.ProjectTypes
                 }
 
                 return Result.UnprocessableEntity(new Error("UpdateProjectType",
-                    "Project type was not created due to unknown error"));
+                    "Project type was not updated due to unknown error"));
             }
         }
     }
