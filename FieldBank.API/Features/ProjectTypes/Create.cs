@@ -1,14 +1,17 @@
 ﻿using FieldBank.API.Common.Endpoints;
 using FieldBank.API.Common.Results;
+using FieldBank.API.Common.SchemaDefinitions;
 using FieldBank.API.Database.Interfaces;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using SqlKata;
+using SqlKata.Execution;
 using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace FieldBank.API.Features.ProjectTypes
 {
-    public static class CreateProjectType
+    public static class Create
     {
         public class Command : IRequest<Result<Guid>>
         {
@@ -16,35 +19,49 @@ namespace FieldBank.API.Features.ProjectTypes
             public string Name { get; set; }
         }
 
-        private sealed class Validator : AbstractValidator<Command>
+        public class Validator : AbstractValidator<Command>
         {
-            public Validator()
+            private readonly ISqlProvider _sqlProvider;
+
+            public Validator(ISqlProvider sqlProvider)
             {
+                _sqlProvider = sqlProvider;
+
                 RuleFor(x => x.Name)
                     .MaximumLength(255).WithMessage("Length of project type name is exceeded")
-                    .NotEmpty().WithMessage("Project type name is required");
+                    .NotEmpty().WithMessage("Project type name is required")
+                    .MustAsync(BeUniqueProjectType)
+                    .WithMessage("Project type should be unique");
+            }
+
+            private async Task<bool> BeUniqueProjectType(string type, CancellationToken token)
+            {
+                using var db = _sqlProvider.Db;
+
+                return await db.Query(ProjectTypesSchema.TableName)
+                    .Where(ProjectTypesSchema.ProjectTypeNameColumn, type)
+                    .CountAsync<int>(cancellationToken:token) == 0;
             }
         }
 
-        public sealed class Handler(ISqlProvider sqlProvider) : IRequestHandler<Command, Result<Guid>>
+        public sealed class Handler
+            (ISqlProvider sqlProvider, IValidator<Command> validator) : IRequestHandler<Command, Result<Guid>>
         {
             public async Task<Result<Guid>> Handle(Command request, CancellationToken cancellationToken)
             {
-                var validator = new Validator();
-
-                ValidationResult result = await validator.ValidateAsync(request, cancellationToken);
+                var result = await validator.ValidateAsync(request, cancellationToken);
 
                 if (!result.IsValid)
                 {
-                    return Result<Guid>.UnprocessableEntity(new Error("Invalid data is provided", result.ToString(";")));
+                    return Result<Guid>.UnprocessableEntity(new Error("CreateProjectType.FailedValidation",
+                        result.ToString(";")));
                 }
 
                 using var db = sqlProvider.Db;
 
-                var query = new Query("ProjectTypes")
-                    .AsInsert(new {request.ProjectTypeId, request.Name});
-
-                var isInserted = await db.ExecuteAsync(query, cancellationToken: cancellationToken);
+                var isInserted = await db.Query(ProjectTypesSchema.TableName)
+                    .InsertAsync(
+                        new {request.ProjectTypeId, request.Name}, cancellationToken: cancellationToken);
 
                 if (isInserted > 0)
                 {
@@ -63,7 +80,7 @@ namespace FieldBank.API.Features.ProjectTypes
         {
             app.MapPost("api/project-types", async (string name, ISender sender) =>
             {
-                var command = new CreateProjectType.Command() {Name = name};
+                var command = new Create.Command() {Name = name};
 
                 var result = await sender.Send(command);
 

@@ -1,5 +1,6 @@
 ﻿using FieldBank.API.Common.Endpoints;
 using FieldBank.API.Common.Results;
+using FieldBank.API.Common.SchemaDefinitions;
 using FieldBank.API.Database.Interfaces;
 using FluentValidation;
 using MediatR;
@@ -8,7 +9,7 @@ using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace FieldBank.API.Features.ProjectTypes
 {
-    public static class DeleteProjectType
+    public static class Delete
     {
         public class Command : IRequest<Result>
         {
@@ -21,8 +22,8 @@ namespace FieldBank.API.Features.ProjectTypes
             {
                 using var db = sqlProvider.Db;
 
-                var query = new Query("ProjectTypes")
-                    .Where("ProjectTypeId", request.ProjectTypeId)
+                var query = new Query(ProjectTypesSchema.TableName)
+                    .Where(ProjectTypesSchema.ProjectTypeIdColumn, request.ProjectTypeId)
                     .AsDelete();
 
                 var isDeleted = await db.ExecuteAsync(query, cancellationToken: cancellationToken);
@@ -45,7 +46,7 @@ namespace FieldBank.API.Features.ProjectTypes
             app.MapDelete("api/project-types/{id}", 
                 async (Guid id, ISender sender) =>
             {
-                var command = new DeleteProjectType.Command
+                var command = new Delete.Command
                 {
                     ProjectTypeId = id
                 };

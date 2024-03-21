@@ -1,14 +1,16 @@
 ﻿using FieldBank.API.Common.Endpoints;
 using FieldBank.API.Common.Results;
+using FieldBank.API.Common.SchemaDefinitions;
 using FieldBank.API.Database.Interfaces;
 using FluentValidation;
 using MediatR;
 using SqlKata;
+using SqlKata.Execution;
 using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace FieldBank.API.Features.ProjectTypes
 {
-    public static class UpdateProjectType
+    public static class Update
     {
         public class UpdateProjectTypeRequest
         {
@@ -24,20 +26,33 @@ namespace FieldBank.API.Features.ProjectTypes
 
         private sealed class Validator : AbstractValidator<Command>
         {
-            public Validator()
+            private readonly ISqlProvider _sqlProvider;
+
+            public Validator(ISqlProvider sqlProvider)
             {
+                _sqlProvider = sqlProvider;
+                
                 RuleFor(x => x.Name)
                     .MaximumLength(255).WithMessage("Length of project type name is exceeded")
-                    .NotEmpty().WithMessage("Project type name is required");
+                    .NotEmpty().WithMessage("Project type name is required")
+                    .MustAsync(BeUniqueProjectType)
+                    .WithMessage("Project type should be unique");
+            }
+
+            private async Task<bool> BeUniqueProjectType(string type, CancellationToken token)
+            {
+                using var db = _sqlProvider.Db;
+
+                return await db.Query(ProjectTypesSchema.TableName)
+                    .Where(ProjectTypesSchema.ProjectTypeNameColumn, type)
+                    .CountAsync<int>(cancellationToken:token) == 0;
             }
         }
 
-        public sealed class Handler(ISqlProvider sqlProvider) : IRequestHandler<Command, Result>
+        public sealed class Handler(ISqlProvider sqlProvider, IValidator<Command> validator) : IRequestHandler<Command, Result>
         {
             public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
             {
-                var validator = new Validator();
-
                 ValidationResult result = await validator.ValidateAsync(request, cancellationToken);
 
                 if (!result.IsValid)
@@ -46,15 +61,13 @@ namespace FieldBank.API.Features.ProjectTypes
                 }
 
                 using var db = sqlProvider.Db;
-
-                var query = new Query("ProjectTypes")
-                    .Where("ProjectTypeId", request.ProjectTypeId)
-                    .AsUpdate(new
+                
+                var isUpdated = await db.Query(ProjectTypesSchema.TableName)
+                    .Where(ProjectTypesSchema.ProjectTypeIdColumn, request.ProjectTypeId)
+                    .UpdateAsync(new
                     {
-                       Name = request.Name
-                    });
-
-                var isUpdated = await db.ExecuteAsync(query, cancellationToken: cancellationToken);
+                        Name = request.Name
+                    }, cancellationToken: cancellationToken);
 
                 if (isUpdated > 0)
                 {
@@ -72,9 +85,9 @@ namespace FieldBank.API.Features.ProjectTypes
         public void MapEndpoint(IEndpointRouteBuilder app)
         {
             app.MapPut("api/project-types", 
-                async (UpdateProjectType.UpdateProjectTypeRequest request, ISender sender) =>
+                async (Update.UpdateProjectTypeRequest request, ISender sender) =>
             {
-                var command = new UpdateProjectType.Command
+                var command = new Update.Command
                 {
                     ProjectTypeId = request.ProjectTypeId,
                     Name = request.Name
