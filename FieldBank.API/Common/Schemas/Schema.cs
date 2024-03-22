@@ -21,6 +21,7 @@
         {
             public const string TableName = "Fields";
             public const string LabelColumn = "Label";
+            public const string FieldIdColumn = "FieldId";
             public const string PageIdColumn = "PageId";
         }
         

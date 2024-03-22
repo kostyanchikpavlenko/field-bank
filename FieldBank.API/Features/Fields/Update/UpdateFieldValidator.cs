@@ -1,15 +1,16 @@
 ﻿using FieldBank.API.Common.Schemas;
+using FieldBank.API.Features.Fields.Creates;
 using FieldBank.API.Persistence.Interfaces;
 using FluentValidation;
 using SqlKata.Execution;
 
-namespace FieldBank.API.Features.Fields.Creates
+namespace FieldBank.API.Features.Fields.Update
 {
-    public class CreateFieldValidator : AbstractValidator<CreateFieldCommand>
+    public class UpdateFieldValidator : AbstractValidator<UpdateFieldCommand>
     {
         private readonly ISqlProvider _sqlProvider;
 
-        public CreateFieldValidator(ISqlProvider sqlProvider)
+        public UpdateFieldValidator(ISqlProvider sqlProvider)
         {
             _sqlProvider = sqlProvider;
             
@@ -27,12 +28,6 @@ namespace FieldBank.API.Features.Fields.Creates
 
             RuleFor(x => x.InputTypeId)
                 .NotEmpty().WithMessage("InputTypeId should not be empty");
-            
-            RuleFor(x => x.IsRequired)
-                .NotEmpty().WithMessage("IsRequired should not be empty");
-            
-            RuleFor(x => x.IsReadonly)
-                .NotEmpty().WithMessage("IsReadonly should not be empty");
         }
 
         private async Task<bool> ExistPage(Guid pageId, CancellationToken token)

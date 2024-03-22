@@ -5,7 +5,7 @@ using System.Data;
 
 namespace FieldBank.API.Persistence.Services
 {
-    public class SqlProvider : ISqlProvider
+    public class SqlProvider : ISqlProvider, IDisposable
     {
         private readonly IDbConnection _dbConnection;
         public QueryFactory Db { get; }

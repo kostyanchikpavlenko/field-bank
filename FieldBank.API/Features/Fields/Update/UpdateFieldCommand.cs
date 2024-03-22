@@ -1,7 +1,11 @@
-﻿namespace FieldBank.API.Features.Fields.Creates
+﻿using FieldBank.API.Common.Results;
+using MediatR;
+
+namespace FieldBank.API.Features.Fields.Update
 {
-    public record CreateFieldRequest
+    public class UpdateFieldCommand : IRequest<Result>
     {
+        public Guid FieldId { get; set; }
         public Guid PageId { get; set; }
         public string Label { get; set; }
         public Guid InputTypeId { get; set; }

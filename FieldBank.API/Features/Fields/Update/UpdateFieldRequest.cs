@@ -1,7 +1,8 @@
-﻿namespace FieldBank.API.Features.Fields.Creates
+﻿namespace FieldBank.API.Features.Fields.Update
 {
-    public record CreateFieldRequest
+    public record UpdateFieldRequest
     {
+        public Guid FieldId { get; set; }
         public Guid PageId { get; set; }
         public string Label { get; set; }
         public Guid InputTypeId { get; set; }
