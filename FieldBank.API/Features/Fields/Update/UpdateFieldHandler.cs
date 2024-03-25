@@ -1,6 +1,5 @@
 ﻿using FieldBank.API.Common.Results;
 using FieldBank.API.Common.Schemas;
-using FieldBank.API.Features.Fields.Creates;
 using FieldBank.API.Persistence.Interfaces;
 using FluentValidation;
 using MediatR;
@@ -42,7 +41,7 @@ namespace FieldBank.API.Features.Fields.Update
             return isUpdated > 0
                 ? Result.Success()
                 : Result.UnprocessableEntity(new Error("UpdateField",
-                    "Project was not created due to unknown error"));
+                    "Field was not created due to unknown error"));
         }
     }
 }
